@@ -64,17 +64,21 @@ async function getRound(Id) {
 }
 
 async function startGame() {
+    await loadCurrentRound();
+}
 
+async function loadCurrentRound() {
+    document.getElementById("controls").innerHTML = "";
     const roundIds = JSON.parse(localStorage.getItem("lastRoundIds") || "[]");
     if(roundIds.length !== 5){
         console.log("Ne možeš započeti ako nisi ni kreirao igru.");
         return;
     }
-
+    
     const currentRoundIndex = Number(localStorage.getItem("currentRoundIndex") || "0");
     const round = await getRound(roundIds[currentRoundIndex]);
-    console.log("Current round: ", currentRoundIndex + 1, round.data);
-    renderGameButtons("buttons", roundIds[currentRoundIndex], round.data);
+    console.log(`Runda ${currentRoundIndex + 1}/5`, round.data);
+    renderGameButtons("buttons", roundIds[currentRoundIndex], round.data);    
 }
 
 const startGameButton = document.getElementById("start-game");
@@ -90,6 +94,7 @@ function renderGameButtons(containerId, roundId, roundData){
         const btn = document.createElement("button");
         btn.textContent = move;
         btn.addEventListener("click", async ()=>{
+            container.querySelectorAll("button").forEach(b => b.disabled = true);
             try{
                 const result = decideResult(move, roundData.computerMove);
                 const updatedData = {
@@ -99,18 +104,20 @@ function renderGameButtons(containerId, roundId, roundData){
                 };
                 const updated = await updateRound(roundId, updatedData);
 
+                renderNextButton();
+
                 console.log("Kompjuter:", roundData.computerMove);
                 console.log("Rezultat:", result);
                 console.log("Saved on server:", updated.data);
 
             }catch(err){
                 console.error(err);
+                container.querySelectorAll("button").forEach(b => b.disabled = false);
             }
         });
         container.append(btn);
     });
 }
-
 
 function decideResult(player, computer){
     if (player === computer) return "draw";
@@ -134,4 +141,25 @@ async function updateRound(roundId, newData){
 
     if(!response.ok) throw new Error("PUT failed " + response.status);
     return await response.json();
+}
+
+function renderNextButton(){
+    const controls = document.getElementById("controls");
+    controls.innerHTML = "";
+
+    const btn = document.createElement("button");
+    btn.innerText = "Next round ➜";
+
+    btn.addEventListener("click", async ()=>{
+        const currentRoundIndex = Number(localStorage.getItem("currentRoundIndex") || "0");
+        const nextIndex = currentRoundIndex + 1;
+        if(nextIndex >= 5){
+            controls.innerHTML("Kraj igre.");
+            return;
+        }
+        localStorage.setItem("currentRoundIndex", String(nextIndex));
+        await loadCurrentRound();
+    });
+
+    controls.appendChild(btn);
 }
