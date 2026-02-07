@@ -153,17 +153,15 @@ function renderNextButton(){
     btn.addEventListener("click", async ()=>{
         const currentRoundIndex = Number(localStorage.getItem("currentRoundIndex") || "0");
         const nextIndex = currentRoundIndex + 1;
+
         if(nextIndex >= 5){
             controls.innerHTML = "";
+            document.getElementById("buttons").innerHTML = "";
             const reviewBtn = document.createElement("button");
             reviewBtn.id = "review";
             reviewBtn.textContent = "Review game";
           
-            reviewBtn.addEventListener("click", async()=>{
-                const roundIds = JSON.parse(localStorage.getItem("lastRoundIds") || "[]");
-                const rounds = await Promise.all(roundIds.map(getRound));
-                console.log("REVIEW:", rounds.map(r => r.data));
-            });
+            reviewBtn.addEventListener("click", reviewGame);
             controls.appendChild(reviewBtn);
             console.log("Kraj igre");
             return;
@@ -171,6 +169,43 @@ function renderNextButton(){
         localStorage.setItem("currentRoundIndex", String(nextIndex));
         await loadCurrentRound();
     });
-
+    
     controls.appendChild(btn);
+}
+
+async function reviewGame(){
+    const out = document.getElementById("review-content");
+    out.innerHTML = "Učitavam review...";
+
+    const roundIds = JSON.parse(localStorage.getItem("lastRoundIds") || "[]");
+    const rounds = await getRoundsBulk(roundIds);
+
+    let won = 0, lost = 0, draw = 0;
+    for(const r of rounds){
+        if (r.data.result === "pobjeda")won++;
+        else if (r.data.result === "poraz")lost++;
+        else draw++;
+    }
+
+    while (out.firstChild) out.removeChild(out.firstChild);
+    
+    const summary = document.createElement("p");
+    summary.textContent = `Pobjeda: ${won}, poraza: ${lost}, neriješenih: ${draw}`;
+    out.appendChild(summary);
+    
+    rounds.sort((a, b) => a.data.roundIndex - b.data.roundIndex);
+    for (const r of rounds) {
+        const p = document.createElement("p");
+        p.textContent = `Runda ${r.data.roundIndex}: Ti=${r.data.playerMove}, Komp=${r.data.computerMove}, Rezultat=${r.data.result}`;
+        out.appendChild(p);
+    }
+    
+    console.log("REVIEW:", rounds.map(r => r.data));
+}
+
+async function getRoundsBulk(ids) {
+    const qs = ids.map(id => `id=${encodeURIComponent(id)}`).join("&");
+    const res = await fetch(`https://api.restful-api.dev/objects?${qs}`);
+    if (!res.ok) throw new Error("Bulk GET failed: " + res.status);
+    return await res.json(); 
 }
