@@ -82,5 +82,16 @@ startGameButton.addEventListener("click", () => {
     renderGameButtons("buttons");
 });
 
+function renderGameButtons(containerId){
+    const container = document.getElementById(containerId);
+    container.innerHTML = "";
 
-
+    ["kamen", "škare", "papir"].forEach((move) =>{
+        const btn = document.createElement("button");
+        btn.textContent = move;
+        btn.addEventListener("click", ()=>{
+            console.log("Igrac odigrao: ", move);
+        });
+        container.append(btn);
+    });
+}
