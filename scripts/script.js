@@ -59,7 +59,7 @@ newGameButton.addEventListener("click", async () =>{
 
 async function getRound(Id) {
     const response = await fetch(`https://api.restful-api.dev/objects/${Id}`);
-    if (!response.ok) throw new Error("GET failed: " + res.status);
+    if (!response.ok) throw new Error("GET failed: " + response.status);
     return await response.json();
 }
 
@@ -74,24 +74,64 @@ async function startGame() {
     const currentRoundIndex = Number(localStorage.getItem("currentRoundIndex") || "0");
     const round = await getRound(roundIds[currentRoundIndex]);
     console.log("Current round: ", currentRoundIndex + 1, round.data);
+    renderGameButtons("buttons", roundIds[currentRoundIndex], round.data);
 }
 
 const startGameButton = document.getElementById("start-game");
 startGameButton.addEventListener("click", () => {
     startGame().catch(console.error);
-    renderGameButtons("buttons");
 });
 
-function renderGameButtons(containerId){
+function renderGameButtons(containerId, roundId, roundData){
     const container = document.getElementById(containerId);
     container.innerHTML = "";
 
     ["kamen", "škare", "papir"].forEach((move) =>{
         const btn = document.createElement("button");
         btn.textContent = move;
-        btn.addEventListener("click", ()=>{
-            console.log("Igrac odigrao: ", move);
+        btn.addEventListener("click", async ()=>{
+            try{
+                const result = decideResult(move, roundData.computerMove);
+                const updatedData = {
+                    ...roundData,      
+                    playerMove: move,
+                    result,            
+                };
+                const updated = await updateRound(roundId, updatedData);
+
+                console.log("Kompjuter:", roundData.computerMove);
+                console.log("Rezultat:", result);
+                console.log("Saved on server:", updated.data);
+
+            }catch(err){
+                console.error(err);
+            }
         });
         container.append(btn);
     });
+}
+
+
+function decideResult(player, computer){
+    if (player === computer) return "draw";
+    if (
+        (player === "kamen" && computer === "škare") ||
+        (player === "škare" && computer === "papir") ||
+        (player === "papir" && computer === "kamen")
+    ) return "pobjeda";
+    return "poraz";
+}
+
+async function updateRound(roundId, newData){
+    const response = await fetch(`https://api.restful-api.dev/objects/${roundId}`,{
+        method: "PUT",
+        headers: {"Content-Type" : "application/json"},
+        body: JSON.stringify({
+            name: "rps-round",
+            data: newData,
+        }),
+    });
+
+    if(!response.ok) throw new Error("PUT failed " + response.status);
+    return await response.json();
 }
