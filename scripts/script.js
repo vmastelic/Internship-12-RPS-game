@@ -154,7 +154,18 @@ function renderNextButton(){
         const currentRoundIndex = Number(localStorage.getItem("currentRoundIndex") || "0");
         const nextIndex = currentRoundIndex + 1;
         if(nextIndex >= 5){
-            controls.innerHTML("Kraj igre.");
+            controls.innerHTML = "";
+            const reviewBtn = document.createElement("button");
+            reviewBtn.id = "review";
+            reviewBtn.textContent = "Review game";
+          
+            reviewBtn.addEventListener("click", async()=>{
+                const roundIds = JSON.parse(localStorage.getItem("lastRoundIds") || "[]");
+                const rounds = await Promise.all(roundIds.map(getRound));
+                console.log("REVIEW:", rounds.map(r => r.data));
+            });
+            controls.appendChild(reviewBtn);
+            console.log("Kraj igre");
             return;
         }
         localStorage.setItem("currentRoundIndex", String(nextIndex));
