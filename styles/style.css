@@ -1,0 +1,64 @@
+:root{
+    --my-blue: rgb(62, 62, 161);
+}
+
+.game-image{
+    z-index: -1;
+    opacity: 0.1;
+    width: 600px;
+    height: auto;
+    border-radius: 10px;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body{
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    background: radial-gradient(circle at center, lightblue 0%, var(--my-blue) 70%);
+}
+
+.game-title{
+    font-size: 2.5rem;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.game-image{
+    z-index: -1;
+    opacity: 0.1;
+    width: 600px;
+    height: auto;
+    border-radius: 10px;
+}
+
+button{
+    border-radius: 10px;
+    border-color: var(--my-blue);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-weight: 600;
+    color: rgb(62, 62, 161);
+    padding: 10px 20px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: transform 500ms ease;
+}
+
+.player-option{
+    display: flex;
+    gap: 10px;
+}
+
+button:hover{
+    background-color: var(--my-blue);
+    color: white;
+    transform: scale(1.03);
+}

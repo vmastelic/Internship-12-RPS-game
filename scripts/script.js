@@ -7,6 +7,7 @@ function randomMove(){
 }
 
 async function createNewGame(){
+
     const gameId = String(Date.now());
     const roundIds = [];
 
@@ -52,6 +53,12 @@ newGameButton.addEventListener("click", async () =>{
         localStorage.setItem("lastGameId", gameId);
         localStorage.setItem("lastRoundIds", JSON.stringify(roundIds));
         localStorage.setItem("currentRoundIndex", "0");
+
+        startGameButton.disabled = false;
+        document.getElementById("review-content").innerHTML = "";
+        document.getElementById("controls").innerHTML = "";
+        document.getElementById("player-option").innerHTML = "";        
+
     }catch(err){
         console.error(err);
     }
@@ -68,17 +75,25 @@ async function startGame() {
 }
 
 async function loadCurrentRound() {
-    document.getElementById("controls").innerHTML = "";
+    const controls = document.getElementById("controls");
+    controls.innerHTML = "";
     const roundIds = JSON.parse(localStorage.getItem("lastRoundIds") || "[]");
     if(roundIds.length !== 5){
-        console.log("Ne možeš započeti ako nisi ni kreirao igru.");
+
+        const message = "Ne možeš započeti ako nisi ni kreirao igru, Kreiraj igru.";
+        const messageEl = document.createElement("p");
+        messageEl.textContent = message;
+        messageEl.style.color = "white";
+        
+        controls.appendChild(messageEl);
+        console.log(message);
         return;
     }
     
     const currentRoundIndex = Number(localStorage.getItem("currentRoundIndex") || "0");
     const round = await getRound(roundIds[currentRoundIndex]);
     console.log(`Runda ${currentRoundIndex + 1}/5`, round.data);
-    renderGameButtons("buttons", roundIds[currentRoundIndex], round.data);    
+    renderGameButtons("player-option", roundIds[currentRoundIndex], round.data);    
 }
 
 const startGameButton = document.getElementById("start-game");
@@ -97,6 +112,9 @@ function renderGameButtons(containerId, roundId, roundData){
             container.querySelectorAll("button").forEach(b => b.disabled = true);
             try{
                 const result = decideResult(move, roundData.computerMove);
+
+                displayResult(move, roundData.computerMove, result);
+
                 const updatedData = {
                     ...roundData,      
                     playerMove: move,
@@ -117,6 +135,17 @@ function renderGameButtons(containerId, roundId, roundData){
         });
         container.append(btn);
     });
+}
+
+function displayResult(playerMove, computerMove, result){
+    const controls = document.getElementById("controls");
+    controls.innerHTML = "";
+    const resultText = `Ti: ${playerMove}  Komp: ${computerMove} → ${result.toUpperCase()}`;
+    const resultEl = document.createElement("p");
+    resultEl.textContent = resultText;
+    resultEl.style.color = result === "pobjeda" ? "lightgreen" : (result === "poraz" ? "salmon" : "lightgray");
+    resultEl.style.fontSize = "1.2em";
+    controls.appendChild(resultEl);
 }
 
 function decideResult(player, computer){
@@ -145,7 +174,6 @@ async function updateRound(roundId, newData){
 
 function renderNextButton(){
     const controls = document.getElementById("controls");
-    controls.innerHTML = "";
 
     const btn = document.createElement("button");
     btn.innerText = "Next round ➜";
@@ -162,6 +190,10 @@ function renderNextButton(){
             reviewBtn.textContent = "Review game";
           
             reviewBtn.addEventListener("click", reviewGame);
+            reviewBtn.disabled = false;
+
+            startGameButton.disabled = true;
+
             controls.appendChild(reviewBtn);
             console.log("Kraj igre");
             return;
