@@ -33,15 +33,22 @@ async function createNewGame(){
         });
 
         if (!response.ok) {
+            const text = await response.text().catch(() => "");
+            console.log("POST FAILED", {
+                status: response.status,
+                statusText: response.statusText,
+                allow: response.headers.get("Allow"),
+                body: text,
+            });
             throw new Error(`POST failed: ${response.status}`);
-        } 
-    
+        }
+        
         const created = await response.json();
         console.log("Created round: ", created.id, created.data);
-    
+        
         roundIds.push(created.id);
     }
-
+    
     console.log("Game created:", gameId, roundIds);
     return { gameId, roundIds};
 }
@@ -57,7 +64,14 @@ newGameButton.addEventListener("click", async () =>{
         startGameButton.disabled = false;
         document.getElementById("review-content").innerHTML = "";
         document.getElementById("controls").innerHTML = "";
-        document.getElementById("player-option").innerHTML = "";        
+        document.getElementById("player-option").innerHTML = "";
+        
+        const message = `Nova igra kreirana! ID igre: ${gameId}`;
+        const messageEl = document.createElement("p");
+        messageEl.textContent = message;
+        messageEl.style.color = "lightgreen";
+        document.getElementById("controls").appendChild(messageEl);
+        console.log(message);
 
     }catch(err){
         console.error(err);
@@ -93,7 +107,8 @@ async function loadCurrentRound() {
     const currentRoundIndex = Number(localStorage.getItem("currentRoundIndex") || "0");
     const round = await getRound(roundIds[currentRoundIndex]);
     console.log(`Runda ${currentRoundIndex + 1}/5`, round.data);
-    renderGameButtons("player-option", roundIds[currentRoundIndex], round.data);    
+    renderGameButtons("player-option", roundIds[currentRoundIndex], round.data);
+    document.getElementById("computer-move").textContent = "";  
 }
 
 const startGameButton = document.getElementById("start-game");
@@ -113,6 +128,7 @@ function renderGameButtons(containerId, roundId, roundData){
             try{
                 const result = decideResult(move, roundData.computerMove);
 
+                document.getElementById("computer-move").textContent = `Kompjuter: ${roundData.computerMove}`;
                 displayResult(move, roundData.computerMove, result);
 
                 const updatedData = {
@@ -140,11 +156,14 @@ function renderGameButtons(containerId, roundId, roundData){
 function displayResult(playerMove, computerMove, result){
     const controls = document.getElementById("controls");
     controls.innerHTML = "";
-    const resultText = `Ti: ${playerMove}  Komp: ${computerMove} → ${result.toUpperCase()}`;
+    const resultText = `Ti: ${playerMove},  Komp: ${computerMove} → ${result.toUpperCase()}`;
+
     const resultEl = document.createElement("p");
     resultEl.textContent = resultText;
-    resultEl.style.color = result === "pobjeda" ? "lightgreen" : (result === "poraz" ? "salmon" : "lightgray");
+    resultEl.style.color = result === "pobjeda" ? "lightgreen" : (result === "poraz" ? "red" : "lightgray");
     resultEl.style.fontSize = "1.2em";
+    resultEl.style.fontWeight = "bold";
+
     controls.appendChild(resultEl);
 }
 
@@ -183,8 +202,11 @@ function renderNextButton(){
         const nextIndex = currentRoundIndex + 1;
 
         if(nextIndex >= 5){
+
             controls.innerHTML = "";
-            document.getElementById("buttons").innerHTML = "";
+            document.getElementById("player-option").innerHTML = "";
+            document.getElementById("computer-move").textContent = "";
+
             const reviewBtn = document.createElement("button");
             reviewBtn.id = "review";
             reviewBtn.textContent = "Review game";
@@ -206,6 +228,10 @@ function renderNextButton(){
 }
 
 async function reviewGame(){
+
+    const reviewBtn = document.getElementById("review");
+    if (reviewBtn) reviewBtn.disabled = true;
+
     const out = document.getElementById("review-content");
     out.innerHTML = "Učitavam review...";
 
@@ -231,7 +257,8 @@ async function reviewGame(){
         p.textContent = `Runda ${r.data.roundIndex}: Ti=${r.data.playerMove}, Komp=${r.data.computerMove}, Rezultat=${r.data.result}`;
         out.appendChild(p);
     }
-    
+    out.style.color = "white";
+    out.style.font = "bold 1em monospace";    
     console.log("REVIEW:", rounds.map(r => r.data));
 }
 
